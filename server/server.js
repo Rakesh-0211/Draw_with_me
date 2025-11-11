@@ -7,34 +7,34 @@ const { Rooms } = require("./rooms");
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Allow WebSockets & CORS (important for Render)
+// Allow WebSockets & CORS
 const io = new Server(server, {
   path: "/socket.io",
   cors: {
-    origin: "*", // or set your domain after deploying
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
 
-// ✅ Render gives a dynamic PORT — must use it
+// Render gives dynamic PORT
 const PORT = process.env.PORT || 3000;
 const rooms = new Rooms();
 
-// Some random user colors
+// Color palette for users
 const COLORS = [
   "#ef4444", "#f59e0b", "#10b981", "#3b82f6",
   "#a855f7", "#ec4899", "#22c55e", "#eab308", "#06b6d4"
 ];
 
-// ✅ Serve static client files
+// Serve static client files
 app.use("/client", express.static(path.join(__dirname, "..", "client")));
 
-// ✅ Serve the main page
+// Serve main page
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "index.html"));
 });
 
-// ✅ Socket.IO logic
+// Socket.IO logic
 io.on("connection", (socket) => {
   let roomId = null;
   let user = null;
@@ -61,7 +61,6 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("cursor:state", { cursors: state.cursors, users });
   });
 
-  // ✅ Live drawing events
   socket.on("stroke:start", ({ tempId, color, width, mode }) => {
     if (!roomId) return;
     socket.to(roomId).emit("stroke:remoteStart", { userId: socket.id, tempId, color, width, mode });
@@ -88,7 +87,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Undo/Redo support
   socket.on("op:undo", () => {
     if (!roomId) return;
     const { state } = rooms.ensure(roomId);
@@ -113,7 +111,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Render expects you to bind to 0.0.0.0 and process.env.PORT
+// ✅ Bind for Render
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
