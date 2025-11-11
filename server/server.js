@@ -103,6 +103,15 @@ io.on("connection", (socket) => {
     }
   });
 
+  // 🧹 Handle canvas clear for all users in the same room
+  socket.on("canvas:clear", () => {
+    if (!roomId) return;
+    const { state } = rooms.ensure(roomId);
+    state.ops = [];   // remove all drawings
+    state.redo = [];  // reset redo stack
+    io.to(roomId).emit("state:replace", { ops: [] }); // broadcast empty state
+  });
+
   socket.on("disconnect", () => {
     if (roomId && user) {
       rooms.removeUser(roomId, user.id);
@@ -111,7 +120,8 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Bind for Render
+// ✅ Bind for Render / Local
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${PORT}`);
+  console.log(`👉 Open http://localhost:${PORT}`);
 });

@@ -7,32 +7,48 @@
   <link rel="stylesheet" href="/client/style.css"/>
 </head>
 <body>
-  <aside id="sidebar">
-    <h1>Collaborative Canvas</h1>
-    <div class="toolbar">
-      <label>Tool:
-        <select id="tool">
-          <option value="brush">Brush</option>
-          <option value="eraser">Eraser</option>
-        </select>
-      </label>
-      <label>Color: <input type="color" id="color" value="#3b82f6"/></label>
-      <label>Width: <input type="range" id="width" min="1" max="40" value="6"/></label>
-      <div class="row">
-        <button id="undoBtn">Undo</button>
-        <button id="redoBtn">Redo</button>
-        <button id="clearBtn" title="Local view only">Clear (local)</button>
-      </div>
-    </div>
-    <div class="users">
-      <h3>Online</h3>
-      <ul id="userList"></ul>
-    </div>
-  </aside>
-  <main>
-    <canvas id="board"></canvas>
-  </main>
+  <div id="app">
+    <aside id="sidebar">
+      <h1>🎨 Collaborative Canvas</h1>
 
+      <div class="toolbar">
+        <div class="tool-group">
+          <label>Tool</label>
+          <select id="tool">
+            <option value="brush">Brush</option>
+            <option value="eraser">Eraser</option>
+          </select>
+        </div>
+
+        <div class="tool-group">
+          <label>Color</label>
+          <input type="color" id="color" value="#3b82f6"/>
+        </div>
+
+        <div class="tool-group">
+          <label>Width</label>
+          <input type="range" id="width" min="1" max="40" value="6"/>
+        </div>
+
+        <div class="row">
+          <button id="undoBtn" class="btn small">Undo</button>
+          <button id="redoBtn" class="btn small">Redo</button>
+          <button id="clearBtn" class="btn small danger" title="Local view only">Clear</button>
+        </div>
+      </div>
+
+      <div class="users">
+        <h3>🟢 Online Users</h3>
+        <ul id="userList"></ul>
+      </div>
+    </aside>
+
+    <main>
+      <canvas id="board"></canvas>
+    </main>
+  </div>
+
+  <!-- Scripts -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="/client/websocket.js"></script>
   <script src="/client/canvas.js"></script>

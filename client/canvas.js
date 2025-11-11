@@ -70,7 +70,13 @@
 
   document.getElementById('undoBtn').addEventListener('click', () => WS.emit('op:undo', {}));
   document.getElementById('redoBtn').addEventListener('click', () => WS.emit('op:redo', {}));
-  document.getElementById('clearBtn').addEventListener('click', () => { ctx.clearRect(0,0,canvas.width,canvas.height); redraw(state.ops); });
+
+  // 🧹 Clear with confirmation (Cancel support)
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    const confirmClear = confirm("Are you sure you want to clear the canvas?");
+    if (!confirmClear) return; // cancel pressed
+    WS.emit('canvas:clear'); // send clear request to server (works for all users)
+  });
 
   // Drawing handlers
   function startDraw(x,y){
@@ -79,6 +85,7 @@
     state.tempId = crypto.randomUUID();
     WS.emit('stroke:start', { tempId: state.tempId, color, width, mode: tool });
   }
+
   function moveDraw(x,y){
     if(!state.drawing) return;
     const p = screenToCanvas(x,y);
@@ -87,6 +94,7 @@
     // Local prediction
     drawOp({ points: state.currentPath.slice(-2), color, width, mode: tool });
   }
+
   function endDraw(){
     if(!state.drawing) return;
     state.drawing = false;
@@ -97,7 +105,6 @@
   // Mouse / touch
   canvas.addEventListener('mousedown', e => startDraw(e.clientX, e.clientY));
   window.addEventListener('mousemove', e => {
-    // cursor broadcast
     sendCursor(e.clientX, e.clientY);
     if(state.drawing) moveDraw(e.clientX, e.clientY);
   });
@@ -105,14 +112,18 @@
   canvas.addEventListener('mouseleave', endDraw);
 
   canvas.addEventListener('touchstart', e => {
-    const t = e.touches[0]; startDraw(t.clientX, t.clientY);
+    const t = e.touches[0]; 
+    startDraw(t.clientX, t.clientY);
     e.preventDefault();
   }, {passive:false});
+
   canvas.addEventListener('touchmove', e => {
-    const t = e.touches[0]; moveDraw(t.clientX, t.clientY);
+    const t = e.touches[0]; 
+    moveDraw(t.clientX, t.clientY);
     sendCursor(t.clientX, t.clientY);
     e.preventDefault();
   }, {passive:false});
+
   canvas.addEventListener('touchend', endDraw);
 
   // Resize
@@ -129,6 +140,7 @@
     state.remoteCursors[userId] = { x:0, y:0, el, color };
     return state.remoteCursors[userId];
   }
+
   function updateCursor(userId, x, y, color){
     const c = ensureCursor(userId, color);
     c.x = x; c.y = y;
@@ -161,13 +173,14 @@
   WS.on('stroke:remoteStart', ({ userId, tempId, color, width, mode }) => {
     state.liveStrokes.set(tempId, { userId, tempId, color, width, mode, points: [] });
   });
+
   WS.on('stroke:remotePoint', ({ tempId, x, y }) => {
     const live = state.liveStrokes.get(tempId);
     if(!live) return;
     live.points.push({x,y});
-    // Only draw recent segment to reduce overdraw
     drawLiveStroke(live);
   });
+
   WS.on('stroke:remoteEnd', ({ tempId }) => {
     state.liveStrokes.delete(tempId);
   });
@@ -191,7 +204,20 @@
     });
   });
 
-  // expose some helpers for main.js
+  // 🆕 Cancel current drawing with ESC key
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && state.drawing) {
+      state.drawing = false;
+      state.currentPath = [];
+      state.tempId = null;
+
+      // Clear current uncommitted line
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      redraw(state.ops);
+    }
+  });
+
+  // expose helpers
   window.CanvasApp = {
     resize,
     screenToCanvas
